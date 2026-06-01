@@ -13,6 +13,7 @@ This project depends on Frigate's MQTT `frigate/events` payload and the SQLite `
 ## Features
 
 - Dockerized .NET 8 worker service.
+- Prebuilt container image published to GitHub Container Registry.
 - MQTT subscription using `MQTTnet`.
 - Frigate event parsing from `frigate/events`.
 - Label and sub-label filtering.
@@ -100,16 +101,18 @@ The directory is mounted read-only into the listener container as `/frigate`.
 
 ## Quick Start
 
-1. Clone the repo:
+1. Create a project folder:
 
 ```bash
-git clone https://github.com/darthza/FrigatePushNotificationHook.git
-cd FrigatePushNotificationHook
+mkdir frigate-mqtt-push-listener
+cd frigate-mqtt-push-listener
 ```
 
-2. Create your environment file:
+2. Download the Compose and environment examples:
 
 ```bash
+curl -fsSLO https://raw.githubusercontent.com/darthza/FrigatePushNotificationHook/main/docker-compose.yml
+curl -fsSLo .env.example https://raw.githubusercontent.com/darthza/FrigatePushNotificationHook/main/.env.example
 cp .env.example .env
 ```
 
@@ -124,7 +127,7 @@ FRIGATE_CONFIG_DIR=/opt/frigate/config
 4. Start Mosquitto and the listener:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 docker compose logs -f frigate-mqtt-push-listener
 ```
 
@@ -135,7 +138,7 @@ docker compose logs -f frigate-mqtt-push-listener
 7. When the filters look right, set `LISTENER_DRY_RUN=false` in `.env` and recreate the listener:
 
 ```bash
-docker compose up -d --build frigate-mqtt-push-listener
+docker compose up -d frigate-mqtt-push-listener
 ```
 
 ## Docker Compose
@@ -143,7 +146,7 @@ docker compose up -d --build frigate-mqtt-push-listener
 Start the broker and listener:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 docker compose logs -f frigate-mqtt-push-listener
 ```
 
@@ -162,17 +165,17 @@ LISTENER_DRY_RUN=false
 Then recreate the listener:
 
 ```bash
-docker compose up -d --build frigate-mqtt-push-listener
+docker compose up -d frigate-mqtt-push-listener
 ```
 
 ## Standalone Container
 
 If you already have an MQTT broker, you can run only the listener container.
 
-Build the image:
+Pull the image:
 
 ```bash
-docker build -t frigate-mqtt-push-listener:local .
+docker pull ghcr.io/darthza/frigatepushnotificationhook:latest
 ```
 
 Run it:
@@ -190,7 +193,7 @@ docker run -d \
   -e Push__Subject=mailto:admin@example.com \
   -v /path/to/frigate/config:/frigate:ro \
   -v "$PWD/state:/app/state" \
-  frigate-mqtt-push-listener:local
+  ghcr.io/darthza/frigatepushnotificationhook:latest
 ```
 
 Watch logs:
@@ -203,6 +206,26 @@ After the dry-run output looks right, recreate the container with:
 
 ```bash
 -e Listener__DryRun=false
+```
+
+## Image Tags
+
+Images are published to GitHub Container Registry:
+
+```text
+ghcr.io/darthza/frigatepushnotificationhook
+```
+
+Available tag patterns:
+
+- `latest`: current `main` branch build.
+- `X.Y.Z`: exact release version.
+- `X.Y`: release series tag.
+
+For a stable deployment, pin a release tag instead of `latest`:
+
+```yaml
+image: ghcr.io/darthza/frigatepushnotificationhook:0.1.0
 ```
 
 ## Frigate MQTT
@@ -307,6 +330,12 @@ Build locally:
 
 ```bash
 dotnet build
+```
+
+Build the container locally:
+
+```bash
+docker build -t frigate-mqtt-push-listener:local .
 ```
 
 Publish locally:

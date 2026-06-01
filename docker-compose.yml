@@ -11,7 +11,7 @@ services:
       - frigate-listener
 
   frigate-mqtt-push-listener:
-    build: .
+    image: ghcr.io/darthza/frigatepushnotificationhook:latest
     container_name: frigate-mqtt-push-listener
     user: "${LISTENER_UID_GID:-1000:1000}"
     restart: unless-stopped
