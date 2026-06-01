@@ -54,6 +54,7 @@ Important settings:
   "Listener": {
     "DryRun": true,
     "CooldownSeconds": 120,
+    "MinimumScore": 0.8,
     "AllowedLabels": [ "person" ],
     "IgnoredLabels": [ "bird", "mouse" ],
     "AllowedSubLabels": [],
@@ -79,6 +80,7 @@ Environment override examples:
 ```bash
 Listener__DryRun=false
 Listener__CooldownSeconds=180
+Listener__MinimumScore=0.8
 Mqtt__Host=mosquitto
 Push__Subject=mailto:admin@example.com
 ```
@@ -122,6 +124,7 @@ cp .env.example .env
 
 ```env
 LISTENER_DRY_RUN=true
+LISTENER_MINIMUM_SCORE=0.8
 PUSH_SUBJECT=mailto:admin@example.com
 FRIGATE_CONFIG_DIR=/opt/frigate/config
 ```
@@ -190,6 +193,7 @@ docker run -d \
   --restart unless-stopped \
   --user 1000:1000 \
   -e Listener__DryRun=true \
+  -e Listener__MinimumScore=0.8 \
   -e Mqtt__Host=<your-mqtt-host> \
   -e Mqtt__Port=1883 \
   -e Push__Subject=mailto:admin@example.com \
@@ -312,10 +316,12 @@ The title and body support simple placeholders:
 - `{label}`
 - `{sub_label}`
 - `{person}`
+- `{score}`
 - `{type}`
 - `{id}`
 
 `{person}` resolves to the Frigate `sub_label` when available, otherwise it falls back to the object label.
+`{score}` resolves to the Frigate object confidence as a percentage, for example `83%`.
 
 Example:
 

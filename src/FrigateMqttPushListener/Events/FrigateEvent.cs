@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace FrigateMqttPushListener.Events;
@@ -9,6 +10,7 @@ public sealed record FrigateEvent(
     string Type,
     IReadOnlyList<string> EnteredZones,
     string? SubLabel,
+    double? Score,
     JsonElement Raw);
 
 public static class FrigateEventParser
@@ -36,7 +38,8 @@ public static class FrigateEventParser
 
         var zones = ReadStringArray(data, "entered_zones");
         var subLabel = ReadString(data, "sub_label");
-        frigateEvent = new FrigateEvent(id, camera, label, eventType, zones, subLabel, root);
+        var score = ReadDouble(data, "score") ?? ReadDouble(root, "score");
+        frigateEvent = new FrigateEvent(id, camera, label, eventType, zones, subLabel, score, root);
         return true;
     }
 
@@ -63,5 +66,30 @@ public static class FrigateEventParser
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Select(value => value!)
             .ToArray();
+    }
+
+    private static double? ReadDouble(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return null;
+        }
+
+        if (property.ValueKind == JsonValueKind.Number && property.TryGetDouble(out var value))
+        {
+            return value;
+        }
+
+        if (property.ValueKind == JsonValueKind.String &&
+            double.TryParse(
+                property.GetString(),
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out var stringValue))
+        {
+            return stringValue;
+        }
+
+        return null;
     }
 }

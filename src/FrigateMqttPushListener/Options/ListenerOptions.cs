@@ -4,6 +4,7 @@ public sealed class ListenerOptions
 {
     public bool DryRun { get; set; } = true;
     public int CooldownSeconds { get; set; } = 120;
+    public double MinimumScore { get; set; } = 0.8;
     public string[] AllowedLabels { get; set; } = ["person"];
     public string[] IgnoredLabels { get; set; } = ["bird", "mouse"];
     public string[] AllowedSubLabels { get; set; } = [];

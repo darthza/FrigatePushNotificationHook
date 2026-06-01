@@ -32,6 +32,21 @@ public sealed class NotificationFilter
             return false;
         }
 
+        if (options.MinimumScore > 0)
+        {
+            if (frigateEvent.Score is null)
+            {
+                reason = $"event has no score and minimum score is {options.MinimumScore:P0}";
+                return false;
+            }
+
+            if (frigateEvent.Score < options.MinimumScore)
+            {
+                reason = $"score {frigateEvent.Score:P0} is below minimum {options.MinimumScore:P0}";
+                return false;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(frigateEvent.SubLabel))
         {
             var ignoredSub = options.IgnoredSubLabels.ToHashSet(StringComparer.OrdinalIgnoreCase);
