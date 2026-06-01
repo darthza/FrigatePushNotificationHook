@@ -2,6 +2,8 @@
 
 A small C#/.NET worker that listens to Frigate MQTT events, applies custom notification rules, and sends web-push notifications through Frigate's existing saved browser/device subscriptions.
 
+This project was made with Codex.
+
 The default configuration is intentionally safe for first rollout: `Listener:DryRun` is `true`, so the service logs would-be notifications instead of sending pushes.
 
 ## Compatibility
