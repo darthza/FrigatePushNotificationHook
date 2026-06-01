@@ -4,6 +4,12 @@ A small C#/.NET worker that listens to Frigate MQTT events, applies custom notif
 
 The default configuration is intentionally safe for first rollout: `Listener:DryRun` is `true`, so the service logs would-be notifications instead of sending pushes.
 
+## Compatibility
+
+Tested with Frigate `0.17.1-416a9b7`.
+
+This project depends on Frigate's MQTT `frigate/events` payload and the SQLite `user.notification_tokens` storage used by Frigate web-push notifications. Other Frigate `0.17.x` builds are expected to work, but check the logs in dry-run mode before enabling real pushes.
+
 ## Features
 
 - Dockerized .NET 8 worker service.
@@ -82,6 +88,56 @@ cp .env.example .env
 
 Then update `FRIGATE_CONFIG_DIR` to the host directory that contains your Frigate `frigate.db`, `frigate.db-wal`, `frigate.db-shm`, and `notifications.pem`.
 
+Common Frigate config paths:
+
+```text
+/opt/frigate/config
+/home/<user>/frigate/config
+/path/to/your/frigate/config
+```
+
+The directory is mounted read-only into the listener container as `/frigate`.
+
+## Quick Start
+
+1. Clone the repo:
+
+```bash
+git clone https://github.com/darthza/FrigatePushNotificationHook.git
+cd FrigatePushNotificationHook
+```
+
+2. Create your environment file:
+
+```bash
+cp .env.example .env
+```
+
+3. Edit `.env`:
+
+```env
+LISTENER_DRY_RUN=true
+PUSH_SUBJECT=mailto:admin@example.com
+FRIGATE_CONFIG_DIR=/opt/frigate/config
+```
+
+4. Start Mosquitto and the listener:
+
+```bash
+docker compose up -d --build
+docker compose logs -f frigate-mqtt-push-listener
+```
+
+5. Enable MQTT in Frigate and restart Frigate.
+
+6. Watch the listener logs. It should first run in dry-run mode and log decisions without sending pushes.
+
+7. When the filters look right, set `LISTENER_DRY_RUN=false` in `.env` and recreate the listener:
+
+```bash
+docker compose up -d --build frigate-mqtt-push-listener
+```
+
 ## Docker Compose
 
 Start the broker and listener:
@@ -109,6 +165,46 @@ Then recreate the listener:
 docker compose up -d --build frigate-mqtt-push-listener
 ```
 
+## Standalone Container
+
+If you already have an MQTT broker, you can run only the listener container.
+
+Build the image:
+
+```bash
+docker build -t frigate-mqtt-push-listener:local .
+```
+
+Run it:
+
+```bash
+mkdir -p ./state
+
+docker run -d \
+  --name frigate-mqtt-push-listener \
+  --restart unless-stopped \
+  --user 1000:1000 \
+  -e Listener__DryRun=true \
+  -e Mqtt__Host=<your-mqtt-host> \
+  -e Mqtt__Port=1883 \
+  -e Push__Subject=mailto:admin@example.com \
+  -v /path/to/frigate/config:/frigate:ro \
+  -v "$PWD/state:/app/state" \
+  frigate-mqtt-push-listener:local
+```
+
+Watch logs:
+
+```bash
+docker logs -f frigate-mqtt-push-listener
+```
+
+After the dry-run output looks right, recreate the container with:
+
+```bash
+-e Listener__DryRun=false
+```
+
 ## Frigate MQTT
 
 Frigate needs MQTT enabled and must be able to reach the broker.
@@ -124,6 +220,64 @@ mqtt:
 ```
 
 Do not expose MQTT to the public internet.
+
+### If Frigate Runs In Docker Compose
+
+If Frigate is managed by another Compose file, attach it to the same external network:
+
+```yaml
+services:
+  frigate:
+    networks:
+      - frigate-listener
+
+networks:
+  frigate-listener:
+    external: true
+```
+
+Then use `host: mosquitto` in Frigate's MQTT config.
+
+### If Frigate Runs Outside This Docker Network
+
+Run your own MQTT broker or publish this Compose broker only on a trusted LAN interface. Then point Frigate and the listener at that broker:
+
+```env
+MQTT_HOST=<your-mqtt-host>
+MQTT_PORT=1883
+```
+
+Keep the broker private. MQTT should not be exposed to the public internet.
+
+## Verifying It Works
+
+Check containers:
+
+```bash
+docker compose ps
+```
+
+Watch listener logs:
+
+```bash
+docker compose logs -f frigate-mqtt-push-listener
+```
+
+Expected dry-run examples:
+
+```text
+Skipping Frigate event ...: label 'bird' is ignored
+DRY RUN push: FrontYard: person detected - person detected on FrontYard
+```
+
+Optional synthetic test event:
+
+```bash
+docker exec frigate-listener-mosquitto mosquitto_pub \
+  -h 127.0.0.1 \
+  -t frigate/events \
+  -m '{"type":"new","after":{"id":"test-event-1","camera":"TestCamera","label":"person","entered_zones":[]}}'
+```
 
 ## Notification Templates
 
@@ -177,4 +331,3 @@ dotnet run --project src/FrigateMqttPushListener
 - Do not remove or rotate Frigate's `notifications.pem`; existing browser/device subscriptions depend on it.
 - Do not commit `.env`, Frigate databases, VAPID keys, logs, or listener state.
 - Do not expose MQTT publicly.
-
