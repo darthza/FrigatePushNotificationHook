@@ -2,7 +2,7 @@ bin/
 obj/
 .vs/
 .vscode/
-state/
+/state/
 mosquitto/data/
 mosquitto/log/
 .env
