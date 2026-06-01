@@ -154,7 +154,9 @@ public sealed class WebPushNotificationSender
 
     private static string FormatScore(double? score)
     {
-        return score is null ? "unknown" : score.Value.ToString("P0", CultureInfo.InvariantCulture);
+        return score is null
+            ? "unknown"
+            : (score.Value * 100).ToString("0", CultureInfo.InvariantCulture) + "%";
     }
 
     private static string Suffix(string value)

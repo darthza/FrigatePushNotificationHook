@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.git/
+.github/
+.env
+.env.*
+!.env.example
+state/
+mosquitto/data/
+mosquitto/log/

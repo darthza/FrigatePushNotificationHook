@@ -1,3 +1,4 @@
+using System.Globalization;
 using FrigateMqttPushListener.Events;
 using FrigateMqttPushListener.Options;
 using Microsoft.Extensions.Options;
@@ -36,13 +37,13 @@ public sealed class NotificationFilter
         {
             if (frigateEvent.Score is null)
             {
-                reason = $"event has no score and minimum score is {options.MinimumScore:P0}";
+                reason = $"event has no score and minimum score is {FormatScore(options.MinimumScore)}";
                 return false;
             }
 
             if (frigateEvent.Score < options.MinimumScore)
             {
-                reason = $"score {frigateEvent.Score:P0} is below minimum {options.MinimumScore:P0}";
+                reason = $"score {FormatScore(frigateEvent.Score.Value)} is below minimum {FormatScore(options.MinimumScore)}";
                 return false;
             }
         }
@@ -88,5 +89,10 @@ public sealed class NotificationFilter
 
         reason = "matched notification rules";
         return true;
+    }
+
+    private static string FormatScore(double score)
+    {
+        return (score * 100).ToString("0", CultureInfo.InvariantCulture) + "%";
     }
 }
