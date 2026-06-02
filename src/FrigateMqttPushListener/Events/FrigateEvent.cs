@@ -10,6 +10,7 @@ public sealed record FrigateEvent(
     string Type,
     IReadOnlyList<string> EnteredZones,
     string? SubLabel,
+    double? SubLabelScore,
     double? Score,
     JsonElement Raw);
 
@@ -37,9 +38,9 @@ public static class FrigateEventParser
         }
 
         var zones = ReadStringArray(data, "entered_zones");
-        var subLabel = ReadString(data, "sub_label");
+        var (subLabel, subLabelScore) = ReadSubLabel(data, "sub_label");
         var score = ReadDouble(data, "score") ?? ReadDouble(root, "score");
-        frigateEvent = new FrigateEvent(id, camera, label, eventType, zones, subLabel, score, root);
+        frigateEvent = new FrigateEvent(id, camera, label, eventType, zones, subLabel, subLabelScore, score, root);
         return true;
     }
 
@@ -68,6 +69,24 @@ public static class FrigateEventParser
             .ToArray();
     }
 
+    private static (string? Label, double? Score) ReadSubLabel(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property))
+        {
+            return (null, null);
+        }
+
+        if (property.ValueKind == JsonValueKind.Array)
+        {
+            var items = property.EnumerateArray().ToArray();
+            var label = items.Length > 0 ? ReadStringValue(items[0]) : null;
+            var score = items.Length > 1 ? ReadDoubleValue(items[1]) : null;
+            return (label, score);
+        }
+
+        return (ReadStringValue(property), null);
+    }
+
     private static double? ReadDouble(JsonElement element, string propertyName)
     {
         if (!element.TryGetProperty(propertyName, out var property))
@@ -75,6 +94,11 @@ public static class FrigateEventParser
             return null;
         }
 
+        return ReadDoubleValue(property);
+    }
+
+    private static double? ReadDoubleValue(JsonElement property)
+    {
         if (property.ValueKind == JsonValueKind.Number && property.TryGetDouble(out var value))
         {
             return value;
@@ -91,5 +115,10 @@ public static class FrigateEventParser
         }
 
         return null;
+    }
+
+    private static string? ReadStringValue(JsonElement property)
+    {
+        return property.ValueKind == JsonValueKind.String ? property.GetString() : property.ToString();
     }
 }

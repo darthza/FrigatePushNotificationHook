@@ -315,12 +315,15 @@ The title and body support simple placeholders:
 - `{camera}`
 - `{label}`
 - `{sub_label}`
+- `{sub_label_score}`
 - `{person}`
 - `{score}`
 - `{type}`
 - `{id}`
 
-`{person}` resolves to the Frigate `sub_label` when available, otherwise it falls back to the object label.
+`{sub_label}` resolves to the known-person name when Frigate provides one.
+`{sub_label_score}` resolves to the known-person confidence as a percentage, for example `99%`.
+`{person}` resolves to the known-person name with confidence when available, for example `Pieter (99%)`, otherwise it falls back to the object label.
 `{score}` resolves to the Frigate object confidence as a percentage, for example `83%`.
 
 Example:

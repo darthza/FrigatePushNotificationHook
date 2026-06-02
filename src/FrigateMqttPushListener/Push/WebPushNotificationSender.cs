@@ -57,6 +57,8 @@ public sealed class WebPushNotificationSender
                 eventId = frigateEvent.Id,
                 camera = frigateEvent.Camera,
                 label = frigateEvent.Label,
+                subLabel = frigateEvent.SubLabel,
+                subLabelScore = frigateEvent.SubLabelScore,
                 score = frigateEvent.Score,
                 type = frigateEvent.Type
             }
@@ -135,7 +137,7 @@ public sealed class WebPushNotificationSender
     private static string Render(string template, FrigateEvent frigateEvent)
     {
         var person = !string.IsNullOrWhiteSpace(frigateEvent.SubLabel)
-            ? frigateEvent.SubLabel
+            ? FormatKnownPerson(frigateEvent.SubLabel, frigateEvent.SubLabelScore)
             : frigateEvent.Label;
 
         var subLabelDisplay = !string.IsNullOrWhiteSpace(frigateEvent.SubLabel)
@@ -148,8 +150,14 @@ public sealed class WebPushNotificationSender
             .Replace("{type}", frigateEvent.Type, StringComparison.OrdinalIgnoreCase)
             .Replace("{id}", frigateEvent.Id, StringComparison.OrdinalIgnoreCase)
             .Replace("{sub_label}", subLabelDisplay, StringComparison.OrdinalIgnoreCase)
+            .Replace("{sub_label_score}", FormatScore(frigateEvent.SubLabelScore), StringComparison.OrdinalIgnoreCase)
             .Replace("{person}", person, StringComparison.OrdinalIgnoreCase)
             .Replace("{score}", FormatScore(frigateEvent.Score), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string FormatKnownPerson(string name, double? score)
+    {
+        return score is null ? name : $"{name} ({FormatScore(score)})";
     }
 
     private static string FormatScore(double? score)
