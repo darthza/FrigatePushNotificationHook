@@ -113,12 +113,14 @@ public sealed class FrigateMqttWorker : BackgroundService
             return;
         }
 
-        if (!await _stateStore.TryReserveNotificationAsync(frigateEvent, CancellationToken.None))
+        var reserveResult = await _stateStore.TryReserveNotificationAsync(frigateEvent, CancellationToken.None);
+        if (!reserveResult.Reserved)
         {
             _logger.LogInformation(
-                "Skipping Frigate event {EventId} from {Camera}: duplicate or cooldown active",
+                "Skipping Frigate event {EventId} from {Camera}: {Reason}",
                 frigateEvent.Id,
-                frigateEvent.Camera);
+                frigateEvent.Camera,
+                reserveResult.Reason);
             return;
         }
 

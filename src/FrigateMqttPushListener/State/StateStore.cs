@@ -23,7 +23,9 @@ public sealed class StateStore
         _logger = logger;
     }
 
-    public async Task<bool> TryReserveNotificationAsync(FrigateEvent frigateEvent, CancellationToken cancellationToken)
+    public async Task<(bool Reserved, string Reason)> TryReserveNotificationAsync(
+        FrigateEvent frigateEvent,
+        CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
         try
@@ -45,16 +47,17 @@ public sealed class StateStore
                 {
                     state.NotifiedEvents[frigateEvent.Id] = frigateEvent.SubLabel;
                     await SaveAsync(state, cancellationToken);
-                    return true;
+                    return (true, "sub_label changed");
                 }
 
-                return false;
+                return (false, "event was already notified");
             }
 
             if (state.LastNotificationByCamera.TryGetValue(frigateEvent.Camera, out var lastNotification) &&
                 now - lastNotification < cooldown)
             {
-                return false;
+                var remaining = cooldown - (now - lastNotification);
+                return (false, $"camera cooldown active for {Math.Ceiling(remaining.TotalSeconds)} more seconds");
             }
 
             state.NotifiedEvents[frigateEvent.Id] = frigateEvent.SubLabel;
@@ -70,7 +73,7 @@ public sealed class StateStore
             }
 
             await SaveAsync(state, cancellationToken);
-            return true;
+            return (true, "reserved notification");
         }
         finally
         {

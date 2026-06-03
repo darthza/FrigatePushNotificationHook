@@ -20,6 +20,7 @@ services:
     environment:
       DOTNET_ENVIRONMENT: Production
       Listener__DryRun: "${LISTENER_DRY_RUN:-true}"
+      Listener__CooldownSeconds: "${LISTENER_COOLDOWN_SECONDS:-300}"
       Listener__MinimumScore: "${LISTENER_MINIMUM_SCORE:-0.8}"
       Push__Subject: "${PUSH_SUBJECT:-mailto:admin@example.com}"
       Mqtt__Host: "${MQTT_HOST:-mosquitto}"

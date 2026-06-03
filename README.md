@@ -20,7 +20,7 @@ This project depends on Frigate's MQTT `frigate/events` payload and the SQLite `
 - Frigate event parsing from `frigate/events`.
 - Label and sub-label filtering.
 - Optional notification when a Frigate `sub_label` appears later on an already-seen event.
-- Per-camera cooldown and duplicate event suppression.
+- Per-camera 5-minute cooldown and duplicate event suppression.
 - Read-only Frigate SQLite subscription lookup.
 - Web-push sending using Frigate's existing VAPID key material.
 - Local Mosquitto broker in Docker Compose.
@@ -53,7 +53,7 @@ Important settings:
 {
   "Listener": {
     "DryRun": true,
-    "CooldownSeconds": 120,
+    "CooldownSeconds": 300,
     "MinimumScore": 0.8,
     "AllowedLabels": [ "person" ],
     "IgnoredLabels": [ "bird", "mouse" ],
@@ -79,7 +79,7 @@ Environment override examples:
 
 ```bash
 Listener__DryRun=false
-Listener__CooldownSeconds=180
+Listener__CooldownSeconds=300
 Listener__MinimumScore=0.8
 Mqtt__Host=mosquitto
 Push__Subject=mailto:admin@example.com
